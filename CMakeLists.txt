@@ -105,3 +105,5 @@ install(EXPORT Sqlpp23Targets
 if(PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
     add_subdirectory(tests)
 endif()
+
+add_subdirectory(demo)

@@ -27,57 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cstddef>
-#include <format>
-#include <stdexcept>
 #include <string_view>
+#include <optional>
+#include <cstddef>
 
-namespace sqlpp::detail {
-template <::std::size_t Size>
-struct fixed_string {
-  static constexpr ::std::size_t size = Size;
+#include <sqlpp23/core/name/case_convert.h>
+#include <sqlpp23/core/meta/annotation.h>
+#include <sqlpp23/core/detail/structural_optional.h>
+#include <sqlpp23/core/detail/fixed_string.h>
 
-  consteval fixed_string(const char (&str)[Size]) noexcept {
-    for (::std::size_t i = 0; i < Size; ++i) {
-      value[i] = str[i];
-    }
-  }
-
-  consteval fixed_string(::std::array<char, Size> str) noexcept {
-    for (::std::size_t i = 0; i < Size; ++i) {
-      value[i] = str[i];
-    }
-  }
-
-  template<::std::ranges::input_range Range> requires(
-    ::std::same_as<::std::ranges::range_value_t<Range>, char>
-  ) [[nodiscard]] inline consteval fixed_string(
-    ::std::from_range_t, Range&& range
-  ) noexcept{
-    ::std::ranges::copy(::std::forward<Range>(range), value);
-  }
-
-  constexpr operator ::std::string_view() const {
-    return ::std::string_view(value, Size - 1uz);
-  }
-
-  constexpr operator const char*() const { return value; }
-
-  consteval auto operator[](::std::size_t index) -> char {
-    if (index >= Size) {
-      throw ::std::out_of_range("index is out of range of fixed_string");
-    }
-    return value[index];
-  }
-
-  char value[Size]{};
-};
-}  // namespace sqlpp::detail
-
-namespace sqlpp::literals {
-template <::sqlpp::detail::fixed_string String>
-consteval auto operator""_sc() -> ::std::constant_wrapper<String> {
-  return {};
+namespace sqlpp::meta{
+	template<typename T, ::std::size_t NameSize, ::std::size_t SqlNameSize, typename SqlTypeOverride = ::std::nullopt_t>
+	struct column_info{
+		using type = T;
+		using sql_type_override = SqlTypeOverride;
+		::sqlpp::detail::structural_optional<::sqlpp::detail::fixed_string<SqlNameSize>> sql_name_override;
+		::sqlpp::detail::structural_optional<::sqlpp::naming_scheme> naming_scheme_override;
+		::sqlpp::detail::fixed_string<NameSize> name;
+		bool is_primary_key;
+		bool is_auto_incremented;
+		bool has_default_initializer;
+	};
 }
-
-}  // namespace sqlpp::literals
